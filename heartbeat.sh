@@ -9,6 +9,7 @@ sleep 3
 	if [[ $variable > 5 ]]
 	then
     	echo 'lento'
+		
 	else
    		echo 'rapido'
 	fi
