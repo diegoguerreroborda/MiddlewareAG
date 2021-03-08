@@ -1,3 +1,3 @@
 #!/bin/bash
-
-docker run -dti --name containerDB$1 -p $1:3000 serverDb
+docker rm containerDB
+docker run -dti --name containerDB -p 4000:3000 serverDb
