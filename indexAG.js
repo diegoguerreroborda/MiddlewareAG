@@ -30,7 +30,7 @@ app.get('/students', (req, res) =>{
         data: req.query
       }).then(response => {
           console.log(response.data);
-          res.json(response.data);
+          res.send(response.data);
       }).catch(err => {
           res.sendStatus(404)
           console.log(err);
