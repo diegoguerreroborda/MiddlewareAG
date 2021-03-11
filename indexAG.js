@@ -5,13 +5,57 @@ const shell = require('shelljs');
 const bodyParser = require('body-parser');
 var  cron  = require('node-cron');
 const port = 3050;
-const portMS = 3000;
+let portMS = 4004;
 
 const app = express()
 app.use(cors())
 app.use(bodyParser.json())
 //shell.exec("sh heartbeat.sh 3000")
 let monitoring = "Nada...";
+
+var taskBackup = cron.schedule('*/5 * * * * *', () => {
+    axios.get(`http://localhost:${portMS}/students_backup`)
+    .then(function (response) {
+        //Hace una petición GET al servidor
+        console.log(response.data)
+        monitoring = `Backup_realizado:`;
+        monitoring += `desde:http://localhost:${portMS}/**a:http://localhost:4320/`
+        shell.exec(`./monitoring.sh ${monitoring}`)
+        monitoring = "";
+    }).catch(function (error) {
+        console.log("error")
+        monitoring = 'Error_al_hacer_backup:_';
+        monitoring += 'Error404:Not_found';
+        shell.exec(`./monitoring.sh ${monitoring}`)
+    });
+});
+//taskBackup.start();
+
+var taskheartbeat = cron.schedule('*/10 * * * * *', () => {
+    axios.get(`http://localhost:${portMS}/`, {timeout: 5000})
+    .then(function (response) {
+        //Hace una petición GET al servidor
+        console.log("rapido")
+        monitoring = 'Estatusdel_servidor:200'
+        monitoring += `http://localhost:${portMS}`;
+        shell.exec(`./monitoring.sh ${monitoring}`)
+        console.log(response.data)
+    }).catch(function (error) {
+        taskheartbeat.stop();
+        console.log("lento")
+        let current = portMS;
+        portMS++;
+        shell.exec(`sh create_server.sh ${current}`)
+        monitoring = 'Servidor_lento...';
+        monitoring += 'Creando_nuevo_contenedor...';
+        monitoring += `http://localhost:${portMS}`;
+        shell.exec(`./monitoring.sh ${monitoring}`)
+        
+        taskheartbeat.stop();
+    });
+});
+
+taskheartbeat.start();
 
 app.get('/students', (req, res) => {
     console.log(req.query);
@@ -29,22 +73,6 @@ app.get('/students', (req, res) => {
         console.log(err);
     });
 })
-
-var taskBackup = cron.schedule('*/5 * * * * *', () => {
-    axios.get(`http://localhost:${portMS}/students_backup`)
-    .then(function (response) {
-        //Hace una petición GET al servidor
-        console.log("Backup hecho")
-        monitoring = 'Backup_realizado';
-        //shell.exec("sh monitoring.sh")
-        shell.exec(`./monitoring.sh ${monitoring}`)
-        monitoring = "";
-    }).catch(function (error) {
-        console.log("error")
-    });
-});
-
-taskBackup.start();
 
 app.get('/monitoring', (req, res) => {
     res.send(monitoring);
